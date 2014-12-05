@@ -1,5 +1,7 @@
 package com.example.gpstrack;
 
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +33,7 @@ public class MainActivity extends Activity implements LocationListener {
 	private String provider;
 	private SQLiteDatabase mydatabase;
 	private com.example.gpstrack.Location loc;
+	private long lengthcontinuality;
 	
 	
 	/** Called when the activity is first created. */
@@ -38,6 +41,7 @@ public class MainActivity extends Activity implements LocationListener {
 	  @Override
 	  public void onCreate(Bundle savedInstanceState) {
 	    super.onCreate(savedInstanceState);
+	    lengthcontinuality = 60000;
 	    setContentView(R.layout.activity_main);
 	    latituteField = (TextView) findViewById(R.id.TextView02);
 	    longitudeField = (TextView) findViewById(R.id.TextView04);
@@ -67,6 +71,7 @@ public class MainActivity extends Activity implements LocationListener {
 	    
 	    Handler handler = new Handler();
 	    Timer myTimer = new Timer();
+	    
 	    myTimer.schedule(new TimerTask() {
 			
 			@Override
@@ -74,7 +79,7 @@ public class MainActivity extends Activity implements LocationListener {
 				// TODO Auto-generated method stub
 				taskPostHandler();
 			}
-		}, 0, 60000);
+		}, 0, lengthcontinuality);
 	  }
 
 	  /* Request updates at startup */
@@ -87,6 +92,8 @@ public class MainActivity extends Activity implements LocationListener {
 	    locationA.setLongitude(152.084);
 	    locationB.setLatitude(88.4232);
 	    locationB.setLongitude(111.084);
+	    
+	    
 	    
 	    float distance = (locationA.distanceTo(locationB)/1000);
 	    Log.d("Distance", "jarak :"+distance);
@@ -131,6 +138,19 @@ public class MainActivity extends Activity implements LocationListener {
 	   
 	}
 	
+	private  boolean isConnectedToServer(String url, int timeout) {
+	    try{
+	        URL myUrl = new URL(url);
+	        URLConnection connection = myUrl.openConnection();
+	        connection.setConnectTimeout(timeout);
+	        connection.connect();
+	        return true;
+	    } catch (Exception e) {
+	        // Handle your exceptions
+	        return false;
+	    }
+	}
+	
 	
 	private void taskPostHandler(){
 		 	mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, username text);");
@@ -139,28 +159,34 @@ public class MainActivity extends Activity implements LocationListener {
 		    	new Thread(new Runnable() {
 					@Override
 					public void run() {
-						if(resultSet.getCount()>0){
-							resultSet.moveToFirst();
-							 for(int i = 0; i<resultSet.getCount();i++){
-							    try{
-							    	Log.v("Tracker onRunnable", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
-							    	loc = new com.example.gpstrack.Location();
-							    	loc.setLatitude(resultSet.getString(1));
-							    	loc.setLongitude(resultSet.getString(2));
-									// TODO Auto-generated method stub
-									new HttpManaged().postEvents(loc);
-									resultSet.moveToNext();
-									Log.v("Tracker", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
-							    }catch(Exception ex){
-							    	Log.d("break runable", "Breakout");
-							    	break;
-							    }
+						if(isConnectedToServer("http://192.168.1.117:3002/locations", 20000)){
+							Log.d("CON IN", "CON TO SEVER");
+							if(resultSet.getCount()>0){
+								resultSet.moveToFirst();
+								 for(int i = 0; i<resultSet.getCount();i++){
+								    try{
+								    	Log.v("Tracker onRunnable", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
+								    	loc = new com.example.gpstrack.Location();
+								    	loc.setLatitude(resultSet.getString(1));
+								    	loc.setLongitude(resultSet.getString(2));
+										// TODO Auto-generated method stub
+										new HttpManaged().postEvents(loc);
+										resultSet.moveToNext();
+										Log.v("Tracker", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
+								    }catch(Exception ex){
+								    	Log.d("break runable", "Breakout");
+								    	break;
+								    }
+								}
+								 resultSet.moveToLast();
+								 Log.d("DATA TERAKHIR", "id :"+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
+								 mydatabase.execSQL("DROP TABLE IF EXISTS " + "location");
+								 Log.v("Table Activity", "Dihapus");
 							}
-							 resultSet.moveToLast();
-							 Log.d("DATA TERAKHIR", "id :"+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
-							 mydatabase.execSQL("DROP TABLE IF EXISTS " + "location");
-							 Log.v("Table Activity", "Dihapus");
-						}
+					    }else{
+					    	lengthcontinuality = 30000;
+					    	Log.d("CON OUT", "NO CON TO SEVER");
+					    }
 					}
 				}).start();
 	}
