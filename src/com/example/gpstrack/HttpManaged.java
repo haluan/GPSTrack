@@ -22,13 +22,14 @@ public class HttpManaged {
 		DefaultHttpClient client = new DefaultHttpClient();
 		
 		/** FOR LOCAL DEV   HttpPost post = new HttpPost("http://192.168.0.186:3000/events"); //works with and without "/create" on the end */
-		HttpPost post = new HttpPost("http://192.168.1.117:3002/locations");
+		HttpPost post = new HttpPost("http://192.168.1.41:3002/locations");
 	    JSONObject holder = new JSONObject();
 	    JSONObject eventObj = new JSONObject();
 	    
 	    try {	
 	    	eventObj.put("latitude", location.getLatitude());
 		    eventObj.put("longitude", location.getLongitude());
+		    eventObj.put("date", location.getDate());
 		    
 		    holder.put("location", eventObj);
 		    

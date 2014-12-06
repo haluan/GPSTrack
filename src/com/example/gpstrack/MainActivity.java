@@ -46,7 +46,7 @@ public class MainActivity extends Activity implements LocationListener {
 	    latituteField = (TextView) findViewById(R.id.TextView02);
 	    longitudeField = (TextView) findViewById(R.id.TextView04);
 	    mydatabase = openOrCreateDatabase("location.db",MODE_PRIVATE,null);
-	    mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, username text);");
+	    mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, date datetime,username text);");
 	    
 	    // Get the location manager
 	    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -131,9 +131,9 @@ public class MainActivity extends Activity implements LocationListener {
 	    latituteField.setText(String.valueOf(lat));
 	    longitudeField.setText(String.valueOf(lng));
 	    Toast.makeText(this, "Lokasi Berubah", 9).show();
-	    mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, username text);");
+	    mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, date DEFAULT (datetime('now','localtime')),username text);");
 	    
-	    mydatabase.execSQL("INSERT INTO location(latitude, longitude, username) VALUES("+(float)lat+","+ (float) lng+", 'test');");
+	    mydatabase.execSQL("INSERT INTO location(latitude, longitude, username, date) VALUES("+(float)lat+","+ (float) lng+", 'test', datetime());");
 	    Toast.makeText(this, "Lokasi Tersimpan", 9).show();
 	   
 	}
@@ -153,33 +153,34 @@ public class MainActivity extends Activity implements LocationListener {
 	
 	
 	private void taskPostHandler(){
-		 	mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, username text);");
+		 	mydatabase.execSQL("CREATE TABLE IF NOT EXISTS location(id integer primary key autoincrement, latitude real, longitude real, date datetime,username text);");
 		 	final Cursor resultSet = mydatabase.rawQuery("Select * from location",null);
 		    	
 		    	new Thread(new Runnable() {
 					@Override
 					public void run() {
-						if(isConnectedToServer("http://192.168.1.117:3002/locations", 20000)){
+						if(isConnectedToServer("http://192.168.1.41:3002/locations", 20000)){
 							Log.d("CON IN", "CON TO SEVER");
 							if(resultSet.getCount()>0){
 								resultSet.moveToFirst();
 								 for(int i = 0; i<resultSet.getCount();i++){
 								    try{
-								    	Log.v("Tracker onRunnable", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
+								    	Log.v("Tracker onRunnable", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(4));
 								    	loc = new com.example.gpstrack.Location();
 								    	loc.setLatitude(resultSet.getString(1));
 								    	loc.setLongitude(resultSet.getString(2));
+								    	loc.setDate(resultSet.getString(3));
 										// TODO Auto-generated method stub
 										new HttpManaged().postEvents(loc);
 										resultSet.moveToNext();
-										Log.v("Tracker", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
+										Log.v("Tracker", "id: "+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(4));
 								    }catch(Exception ex){
 								    	Log.d("break runable", "Breakout");
 								    	break;
 								    }
 								}
 								 resultSet.moveToLast();
-								 Log.d("DATA TERAKHIR", "id :"+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(3));
+								 Log.d("DATA TERAKHIR", "id :"+resultSet.getString(0)+" lat: "+resultSet.getString(1)+" long: "+resultSet.getString(2)+" username: "+resultSet.getString(4));
 								 mydatabase.execSQL("DROP TABLE IF EXISTS " + "location");
 								 Log.v("Table Activity", "Dihapus");
 							}

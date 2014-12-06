@@ -4,6 +4,7 @@ public class Location {
 	private long id;
 	private String latitude;
 	private String longitude;
+	private String date;
 	
 	
 	public long getId() {
@@ -23,6 +24,12 @@ public class Location {
 	}
 	public void setLongitude(String longitude) {
 		this.longitude = longitude;
+	}
+	public String getDate() {
+		return date;
+	}
+	public void setDate(String date) {
+		this.date = date;
 	}
 	
 	
